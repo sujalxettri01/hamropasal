@@ -1,37 +1,53 @@
 <?php
-require '../database/connection.php';
-$id = intval($_GET['id'] ?? 0);
-$product = null;
-if($id){
-   $res = $conn->query("SELECT * FROM products WHERE product_id=$id");
-   $product = $res->fetch_assoc();
+session_start();
+require __DIR__ . '/../database/connection.php';
+
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+if ($id <= 0) {
+    header('Location: /hamropasal/products/');
+    exit;
 }
-if(!$product){
-   header('Location: ../products/');
-   exit;
+
+$result = mysqli_query($conn, "SELECT * FROM products WHERE product_id=$id AND is_active=1 LIMIT 1");
+$product = ($result) ? mysqli_fetch_assoc($result) : null;
+
+if (!$product) {
+    header('Location: /hamropasal/products/');
+    exit;
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo htmlspecialchars($product['name']); ?> - HamroPasal</title>
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="/hamropasal/css/style.css">
 </head>
 <body>
-<?php include '../partials/header.php'; ?>
+<?php include __DIR__ . '/../partials/header.php'; ?>
 <div class="container">
-  <h1><?php echo htmlspecialchars($product['name']); ?></h1>
-  <img src="<?php echo $product['image']; ?>" alt="" style="max-width:300px;">
-  <p><?php echo nl2br(htmlspecialchars($product['description'])); ?></p>
-  <p>Price: ₹<?php echo $product['price']; ?></p>
-  <form method="post" action="../cart/">
-    <input type="hidden" name="action" value="add">
-    <input type="hidden" name="id" value="<?php echo $product['product_id']; ?>">
-    <button type="submit">Add to Cart</button>
-  </form>
+  <div class="form-card" style="max-width: 920px;">
+    <div style="display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 18px; align-items: start;">
+      <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" style="width:100%; border-radius: 10px; max-height: 320px; object-fit: cover;">
+      <div>
+        <h1><?php echo htmlspecialchars($product['name']); ?></h1>
+        <p><strong>Category:</strong> <?php echo htmlspecialchars($product['category']); ?></p>
+        <p class="price">Rs. <?php echo number_format((float) $product['price'], 2); ?></p>
+        <p><strong>Stock:</strong> <?php echo (int) $product['stock']; ?></p>
+        <p><?php echo nl2br(htmlspecialchars($product['description'])); ?></p>
+
+        <form method="post" action="/hamropasal/cart/">
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="id" value="<?php echo (int) $product['product_id']; ?>">
+          <label for="qty">Quantity</label>
+          <input id="qty" type="number" name="qty" min="1" max="<?php echo (int) $product['stock']; ?>" value="1" style="max-width: 110px;">
+          <button type="submit">Add to Cart</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
-<?php include '../partials/footer.php'; ?>
-<script src="../js/script.js"></script>
+<?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 </html>

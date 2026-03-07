@@ -1,38 +1,94 @@
 <?php
 session_start();
-require '../database/connection.php';
-$message='';
-if($_SERVER['REQUEST_METHOD']==='POST'){
-    $name = $conn->real_escape_string($_POST['name']);
-    $email = $conn->real_escape_string($_POST['email']);
-    $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $phone = $conn->real_escape_string($_POST['phone']);
-    if($conn->query("INSERT INTO users (name,email,password,phone) VALUES ('$name','$email','$pass','$phone')")){
-        $id = $conn->insert_id;
-        $_SESSION['user'] = ['user_id'=>$id,'name'=>$name,'email'=>$email,'is_admin'=>0];
-        header('Location: ../');
-        exit;
+require __DIR__ . '/../database/connection.php';
+
+if (isset($_SESSION['user'])) {
+    header('Location: /hamropasal/');
+    exit;
+}
+
+$error = '';
+$success = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $address = trim($_POST['address'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm = $_POST['confirm_password'] ?? '';
+
+    if ($name === '' || $email === '' || $password === '') {
+        $error = 'Name, email, and password are required.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Please enter a valid email address.';
+    } elseif (strlen($password) < 6) {
+        $error = 'Password must be at least 6 characters long.';
+    } elseif ($password !== $confirm) {
+        $error = 'Passwords do not match.';
     } else {
-        $message = 'Registration error: '.$conn->error;
+        $emailEscaped = mysqli_real_escape_string($conn, $email);
+        $existing = mysqli_query($conn, "SELECT user_id FROM users WHERE email='$emailEscaped'");
+        if ($existing && mysqli_num_rows($existing) > 0) {
+            $error = 'Email already registered. Please login.';
+        } else {
+            $nameEscaped = mysqli_real_escape_string($conn, $name);
+            $phoneEscaped = mysqli_real_escape_string($conn, $phone);
+            $addressEscaped = mysqli_real_escape_string($conn, $address);
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            $passwordEscaped = mysqli_real_escape_string($conn, $passwordHash);
+
+            $sql = "INSERT INTO users (name, email, phone, address, password) VALUES ('$nameEscaped', '$emailEscaped', '$phoneEscaped', '$addressEscaped', '$passwordEscaped')";
+            if (mysqli_query($conn, $sql)) {
+                $success = 'Registration successful. Please login.';
+            } else {
+                $error = 'Registration failed. Please try again.';
+            }
+        }
     }
 }
 ?>
 <!DOCTYPE html>
-<html>
-<head><title>Register</title><link rel="stylesheet" href="../css/style.css"></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - HamroPasal</title>
+  <link rel="stylesheet" href="/hamropasal/css/style.css">
+</head>
 <body>
-<?php include '../partials/header.php'; ?>
+<?php include __DIR__ . '/../partials/header.php'; ?>
 <div class="container">
-<h1>Register</h1>
-<?php if($message) echo "<p>$message</p>"; ?>
-<form method="post">
-<label>Name</label><input type="text" name="name" required><br>
-<label>Email</label><input type="email" name="email" required><br>
-<label>Password</label><input type="password" name="password" required><br>
-<label>Phone</label><input type="text" name="phone"><br>
-<button type="submit">Register</button>
-</form>
+  <div class="form-card">
+    <h1>Create Account</h1>
+    <?php if ($error !== ''): ?><div class="alert error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
+    <?php if ($success !== ''): ?><div class="alert success"><?php echo htmlspecialchars($success); ?></div><?php endif; ?>
+
+    <form method="post">
+      <label for="name">Full Name</label>
+      <input id="name" name="name" type="text" required>
+
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required>
+
+      <label for="phone">Phone</label>
+      <input id="phone" name="phone" type="text">
+
+      <label for="address">Address</label>
+      <textarea id="address" name="address"></textarea>
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" required>
+
+      <label for="confirm_password">Confirm Password</label>
+      <input id="confirm_password" name="confirm_password" type="password" required>
+
+      <button type="submit">Register</button>
+    </form>
+
+    <p>Already have an account? <a href="/hamropasal/login/">Login</a></p>
+  </div>
 </div>
-<?php include '../partials/footer.php'; ?>
+<?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 </html>

@@ -1,40 +1,75 @@
 <?php
 session_start();
-require '../database/connection.php';
-if(!isset($_SESSION['user']) || !$_SESSION['user']['is_admin']){
-    header('Location: ../login.php');
+require __DIR__ . '/../database/connection.php';
+
+if (!isset($_SESSION['user']) || empty($_SESSION['user']['is_admin'])) {
+    header('Location: /hamropasal/login/');
     exit;
 }
-if(isset($_GET['delete'])){
-    $id = intval($_GET['delete']);
-    $conn->query("DELETE FROM products WHERE product_id=$id");
+
+if (isset($_GET['delete'])) {
+    $id = (int) $_GET['delete'];
+    if ($id > 0) {
+        mysqli_query($conn, "DELETE FROM products WHERE product_id=$id");
+    }
+    header('Location: /hamropasal/admin/manage_products.php');
+    exit;
 }
-$products = $conn->query("SELECT * FROM products");
+
+$products = mysqli_query($conn, "SELECT * FROM products ORDER BY product_id DESC");
 ?>
 <!DOCTYPE html>
-<html>
-<head><title>Manage Products</title><link rel="stylesheet" href="../css/style.css"></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Products - HamroPasal</title>
+  <link rel="stylesheet" href="/hamropasal/css/style.css">
+</head>
 <body>
-<?php include '../partials/header.php'; ?>
+<?php include __DIR__ . '/../partials/header.php'; ?>
 <div class="container">
-<h1>Manage Products</h1>
-<p><a href="add_product.php">Add New Product</a></p>
-<table>
-<tr><th>ID</th><th>Name</th><th>Price</th><th>Category</th><th>Actions</th></tr>
-<?php while($p=$products->fetch_assoc()): ?>
-<tr>
-<td><?php echo $p['product_id']; ?></td>
-<td><?php echo htmlspecialchars($p['name']); ?></td>
-<td>₹<?php echo $p['price']; ?></td>
-<td><?php echo htmlspecialchars($p['category']); ?></td>
-<td>
-  <a href="edit_product.php?id=<?php echo $p['product_id']; ?>">Edit</a> |
-  <a href="?delete=<?php echo $p['product_id']; ?>" onclick="return confirm('Delete?');">Delete</a>
-</td>
-</tr>
-<?php endwhile;?>
-</table>
+  <section class="hero">
+    <h1>Manage Products</h1>
+  </section>
+
+  <p>
+    <a class="btn" href="/hamropasal/admin/add_product.php">Add New Product</a>
+    <a class="btn secondary" href="/hamropasal/admin/dashboard.php">Back to Dashboard</a>
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php while ($p = mysqli_fetch_assoc($products)): ?>
+          <tr>
+            <td><?php echo (int) $p['product_id']; ?></td>
+            <td><?php echo htmlspecialchars($p['name']); ?></td>
+            <td><?php echo htmlspecialchars($p['category']); ?></td>
+            <td>Rs. <?php echo number_format((float) $p['price'], 2); ?></td>
+            <td><?php echo (int) $p['stock']; ?></td>
+            <td><?php echo ((int) $p['is_active'] === 1) ? 'Active' : 'Hidden'; ?></td>
+            <td>
+              <a class="btn" href="/hamropasal/admin/edit_product.php?id=<?php echo (int) $p['product_id']; ?>">Edit</a>
+              <a class="btn danger" href="/hamropasal/admin/manage_products.php?delete=<?php echo (int) $p['product_id']; ?>" onclick="return confirm('Delete this product?')">Delete</a>
+            </td>
+          </tr>
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  </div>
 </div>
-<?php include '../partials/footer.php'; ?>
+<?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 </html>

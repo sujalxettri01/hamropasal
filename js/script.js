@@ -1,9 +1,10 @@
-function updateQty(productId, qty) {
-    window.location = '/hamropasal/cart/?action=update&id=' + productId + '&qty=' + qty;
-}
-
-function removeItem(productId) {
-    if (confirm('Remove this item?')) {
-        window.location = '/hamropasal/cart/?action=remove&id=' + productId;
-    }
-}
+document.addEventListener("DOMContentLoaded", function () {
+  const quantityInputs = document.querySelectorAll("input[name='qty']");
+  quantityInputs.forEach(function (input) {
+    input.addEventListener("change", function () {
+      if (Number(input.value) < 1) {
+        input.value = 1;
+      }
+    });
+  });
+});

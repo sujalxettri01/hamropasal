@@ -1,40 +1,66 @@
 <?php
 session_start();
-require '../database/connection.php';
-$redirect = $_GET['redirect'] ?? '../';
-$message='';
-if($_SERVER['REQUEST_METHOD']==='POST'){
-    $email = $conn->real_escape_string($_POST['email']);
-    $pass = $_POST['password'];
-    $res = $conn->query("SELECT * FROM users WHERE email='$email'");
-    if($user = $res->fetch_assoc()){
-        if(password_verify($pass, $user['password'])){
-            $_SESSION['user']=$user;
-            header("Location:$redirect");
-            exit;
-        } else {
-            $message = 'Invalid credentials';
-        }
+require __DIR__ . '/../database/connection.php';
+
+if (isset($_SESSION['user'])) {
+    header('Location: /hamropasal/');
+    exit;
+}
+
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if ($email === '' || $password === '') {
+        $error = 'Email and password are required.';
     } else {
-        $message = 'User not found';
+        $emailEscaped = mysqli_real_escape_string($conn, $email);
+        $result = mysqli_query($conn, "SELECT * FROM users WHERE email='$emailEscaped' LIMIT 1");
+        $user = ($result) ? mysqli_fetch_assoc($result) : null;
+
+        if (!$user || !password_verify($password, $user['password'])) {
+            $error = 'Invalid email or password.';
+        } else {
+            $_SESSION['user'] = [
+                'user_id' => (int) $user['user_id'],
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'is_admin' => (int) $user['is_admin']
+            ];
+            header('Location: /hamropasal/');
+            exit;
+        }
     }
 }
 ?>
 <!DOCTYPE html>
-<html>
-<head><title>Login</title><link rel="stylesheet" href="../css/style.css"></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - HamroPasal</title>
+  <link rel="stylesheet" href="/hamropasal/css/style.css">
+</head>
 <body>
-<?php include '../partials/header.php'; ?>
+<?php include __DIR__ . '/../partials/header.php'; ?>
 <div class="container">
-<h1>Login</h1>
-<?php if($message) echo "<p>$message</p>"; ?>
-<form method="post">
-<label>Email</label><input type="email" name="email" required><br>
-<label>Password</label><input type="password" name="password" required><br>
-<button type="submit">Login</button>
-</form>
-<p><a href="../register/">Register</a></p>
+  <div class="form-card">
+    <h1>Login</h1>
+    <?php if ($error !== ''): ?><div class="alert error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
+    <form method="post">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required>
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" required>
+
+      <button type="submit">Login</button>
+    </form>
+    <p>New here? <a href="/hamropasal/register/">Create an account</a></p>
+  </div>
 </div>
-<?php include '../partials/footer.php'; ?>
+<?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 </html>

@@ -1,27 +1,44 @@
 <?php
 session_start();
-require '../database/connection.php';
-if(!isset($_SESSION['user']) || !$_SESSION['user']['is_admin']){
-    header('Location: ../login.php');
+require __DIR__ . '/../database/connection.php';
+
+if (!isset($_SESSION['user']) || empty($_SESSION['user']['is_admin'])) {
+    header('Location: /hamropasal/login/');
     exit;
 }
-$res1 = $conn->query("SELECT COUNT(*) as cnt FROM products");
-$total_products = $res1->fetch_assoc()['cnt'];
-$res2 = $conn->query("SELECT COUNT(*) as cnt FROM orders");
-$total_orders = $res2->fetch_assoc()['cnt'];
+
+$totalProducts = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM products"));
+$totalOrders = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM orders"));
+$totalUsers = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM users"));
+$totalSales = mysqli_fetch_assoc(mysqli_query($conn, "SELECT IFNULL(SUM(total_amount),0) AS total FROM orders WHERE order_status <> 'Cancelled'"));
 ?>
 <!DOCTYPE html>
-<html>
-<head><title>Admin Dashboard</title><link rel="stylesheet" href="../css/style.css"></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - HamroPasal</title>
+  <link rel="stylesheet" href="/hamropasal/css/style.css">
+</head>
 <body>
-<?php include '../partials/header.php'; ?>
+<?php include __DIR__ . '/../partials/header.php'; ?>
 <div class="container">
-<h1>Admin Dashboard</h1>
-<p>Total products: <?php echo $total_products; ?></p>
-<p>Total orders: <?php echo $total_orders; ?></p>
-<p><a href="manage_products.php">Manage Products</a></p>
-<p><a href="../orders.php">View Orders</a></p>
+  <section class="hero">
+    <h1>Admin Dashboard</h1>
+  </section>
+
+  <div class="grid">
+    <div class="summary-box"><h3>Products</h3><p><?php echo (int) $totalProducts['total']; ?></p></div>
+    <div class="summary-box"><h3>Orders</h3><p><?php echo (int) $totalOrders['total']; ?></p></div>
+    <div class="summary-box"><h3>Users</h3><p><?php echo (int) $totalUsers['total']; ?></p></div>
+    <div class="summary-box"><h3>Sales</h3><p>Rs. <?php echo number_format((float) $totalSales['total'], 2); ?></p></div>
+  </div>
+
+  <p>
+    <a class="btn" href="/hamropasal/admin/manage_products.php">Manage Products</a>
+    <a class="btn secondary" href="/hamropasal/orders/">Manage Orders</a>
+  </p>
 </div>
-<?php include '../partials/footer.php'; ?>
+<?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 </html>
