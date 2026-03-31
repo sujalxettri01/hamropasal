@@ -1,9 +1,11 @@
 <?php
+// Start admin session (separate from user session)
+session_name('admin_session');
 session_start();
 require __DIR__ . '/../database/connection.php';
 
 if (!isset($_SESSION['user']) || empty($_SESSION['user']['is_admin'])) {
-    header('Location: /hamropasal/login/');
+    header('Location: /hamropasal/admin/login.php');
     exit;
 }
 
@@ -15,20 +17,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['description'] ?? '');
     $price = (float) ($_POST['price'] ?? 0);
     $stock = (int) ($_POST['stock'] ?? 0);
-    $image = trim($_POST['image'] ?? '');
+    $customFilename = trim($_POST['custom_filename'] ?? '');
     $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+    // Handle file upload (required)
+    $uploadedImage = '';
+    if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = __DIR__ . '/../uploads/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        $originalName = $_FILES['image_file']['name'];
+        $fileExtension = pathinfo($originalName, PATHINFO_EXTENSION);
+        
+        // Use custom filename if provided, otherwise use original
+        $filename = $customFilename !== '' ? $customFilename . '.' . $fileExtension : $originalName;
+        
+        $uploadPath = $uploadDir . $filename;
+        
+        if (move_uploaded_file($_FILES['image_file']['tmp_name'], $uploadPath)) {
+            $uploadedImage = '/hamropasal/uploads/' . $filename;
+        } else {
+            $error = 'Failed to upload image.';
+        }
+    } else {
+        $error = 'Please select an image file to upload.';
+    }
 
     if ($name === '' || $category === '' || $price <= 0) {
         $error = 'Name, category and valid price are required.';
-    } else {
-        if ($image === '') {
-            $image = 'https://via.placeholder.com/300x220?text=Product';
-        }
+    } elseif ($error === '' && $uploadedImage !== '') {
 
         $nameEsc = mysqli_real_escape_string($conn, $name);
         $catEsc = mysqli_real_escape_string($conn, $category);
         $descEsc = mysqli_real_escape_string($conn, $description);
-        $imageEsc = mysqli_real_escape_string($conn, $image);
+        $imageEsc = mysqli_real_escape_string($conn, $uploadedImage);
 
         $sql = "INSERT INTO products (name, category, description, price, stock, image, is_active)
                 VALUES ('$nameEsc', '$catEsc', '$descEsc', $price, $stock, '$imageEsc', $isActive)";
@@ -40,23 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+$pageTitle = 'Add Product';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Product - HamroPasal</title>
-  <link rel="stylesheet" href="/hamropasal/css/style.css">
-</head>
-<body>
-<?php include __DIR__ . '/../partials/header.php'; ?>
-<div class="container">
-  <div class="form-card">
+<?php include __DIR__ . '/admin_header.php'; ?>
+<div class="admin-container">
+  <div class="admin-form-card">
     <h1>Add Product</h1>
-    <?php if ($error !== ''): ?><div class="alert error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
+    <?php if ($error !== ''): ?><div class="admin-alert error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
 
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
       <label for="name">Name</label>
       <input id="name" name="name" required>
 
@@ -69,18 +85,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <label for="stock">Stock</label>
       <input id="stock" name="stock" type="number" min="0" value="0" required>
 
-      <label for="image">Image URL</label>
-      <input id="image" name="image" type="text">
+      <label for="image_file">Upload Image</label>
+      <input id="image_file" name="image_file" type="file" accept="image/*" required>
+
+      <label for="custom_filename">Custom Filename (optional)</label>
+      <input id="custom_filename" name="custom_filename" type="text" placeholder="Leave empty to use original filename">
 
       <label for="description">Description</label>
       <textarea id="description" name="description"></textarea>
 
       <label><input type="checkbox" name="is_active" checked style="width:auto; margin-right: 8px;"> Active</label>
 
-      <button type="submit">Save Product</button>
+      <button type="submit" class="admin-btn">Save Product</button>
     </form>
   </div>
 </div>
-<?php include __DIR__ . '/../partials/footer.php'; ?>
-</body>
-</html>
+<?php include __DIR__ . '/admin_footer.php'; ?>
+<script>
+document.getElementById('image_file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const filename = file.name;
+        const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
+        document.getElementById('custom_filename').value = nameWithoutExt;
+    }
+});
+</script>

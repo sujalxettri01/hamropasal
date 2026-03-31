@@ -1,9 +1,17 @@
 <?php
+// Start user session (separate from admin session)
+session_name('user_session');
 session_start();
 require __DIR__ . '/../database/connection.php';
 
 if (!isset($_SESSION['user'])) {
     header('Location: /hamropasal/login/');
+    exit;
+}
+
+// Redirect admins to admin panel
+if (!empty($_SESSION['user']['is_admin'])) {
+    header('Location: /hamropasal/admin/admin.php');
     exit;
 }
 
@@ -81,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             mysqli_commit($conn);
             $_SESSION['cart'] = [];
-            header('Location: /hamropasal/order_success/?id=' . $orderId);
+            header('Location: /hamropasal/order_success/?id=' . $orderId . '&success=1');
             exit;
         } catch (Exception $e) {
             mysqli_rollback($conn);

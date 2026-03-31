@@ -1,4 +1,6 @@
 <?php
+// Start user session (separate from admin session)
+session_name('user_session');
 session_start();
 require __DIR__ . '/../database/connection.php';
 
@@ -8,40 +10,21 @@ if (!isset($_SESSION['user'])) {
 }
 
 $userId = (int) $_SESSION['user']['user_id'];
-$isAdmin = !empty($_SESSION['user']['is_admin']);
 
-if ($isAdmin && isset($_GET['set_status'], $_GET['id'])) {
-    $allowed = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
-    $status = trim($_GET['set_status']);
-    $orderId = (int) $_GET['id'];
-    if (in_array($status, $allowed, true) && $orderId > 0) {
-        $statusEsc = mysqli_real_escape_string($conn, $status);
-        mysqli_query($conn, "UPDATE orders SET order_status='$statusEsc' WHERE order_id=$orderId");
-    }
-    header('Location: /hamropasal/orders/');
+// Redirect admins to admin orders page
+if (!empty($_SESSION['user']['is_admin'])) {
+    header('Location: /hamropasal/admin/orders.php');
     exit;
 }
 
-$orderSql = "SELECT o.*, u.name AS user_name FROM orders o JOIN users u ON u.user_id=o.user_id";
-if (!$isAdmin) {
-    $orderSql .= " WHERE o.user_id=$userId";
-}
-$orderSql .= " ORDER BY o.created_at DESC";
+$orderSql = "SELECT o.*, u.name AS user_name FROM orders o JOIN users u ON u.user_id=o.user_id WHERE o.user_id=$userId ORDER BY o.created_at DESC";
 $orders = mysqli_query($conn, $orderSql);
+$pageTitle = 'My Orders';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Orders - HamroPasal</title>
-  <link rel="stylesheet" href="/hamropasal/css/style.css">
-</head>
-<body>
 <?php include __DIR__ . '/../partials/header.php'; ?>
 <div class="container">
   <section class="hero">
-    <h1><?php echo $isAdmin ? 'All Orders' : 'My Orders'; ?></h1>
+    <h1>My Orders</h1>
   </section>
 
   <div class="table-wrap">
@@ -49,8 +32,8 @@ $orders = mysqli_query($conn, $orderSql);
       <thead>
         <tr>
           <th>Order ID</th>
-          <?php if ($isAdmin): ?><th>Customer</th><?php endif; ?>
           <th>Phone</th>
+          <th>Address</th>
           <th>Total</th>
           <th>Payment</th>
           <th>Status</th>
@@ -62,18 +45,15 @@ $orders = mysqli_query($conn, $orderSql);
         <?php while ($order = mysqli_fetch_assoc($orders)): ?>
           <tr>
             <td>#<?php echo (int) $order['order_id']; ?></td>
-            <?php if ($isAdmin): ?><td><?php echo htmlspecialchars($order['user_name']); ?></td><?php endif; ?>
             <td><?php echo htmlspecialchars($order['phone']); ?></td>
+            <td><?php echo htmlspecialchars(substr($order['address'], 0, 30)) . (strlen($order['address']) > 30 ? '...' : ''); ?></td>
             <td>Rs. <?php echo number_format((float) $order['total_amount'], 2); ?></td>
             <td><?php echo htmlspecialchars($order['payment_method']); ?></td>
             <td><?php echo htmlspecialchars($order['order_status']); ?></td>
-            <td><?php echo htmlspecialchars($order['created_at']); ?></td>
+            <td><?php echo date('M d, Y', strtotime($order['created_at'])); ?></td>
             <td>
-              <a class="btn" href="/hamropasal/order_success/?id=<?php echo (int) $order['order_id']; ?>">View</a>
-              <?php if ($isAdmin): ?>
-                <a class="btn secondary" href="/hamropasal/orders/?id=<?php echo (int) $order['order_id']; ?>&set_status=Processing">Processing</a>
-                <a class="btn secondary" href="/hamropasal/orders/?id=<?php echo (int) $order['order_id']; ?>&set_status=Delivered">Delivered</a>
-              <?php endif; ?>
+              <a class="btn" href="/hamropasal/orders/order_details.php?id=<?php echo (int) $order['order_id']; ?>">View Details</a>
+              <a class="btn secondary" href="/hamropasal/orders/track.php?id=<?php echo (int) $order['order_id']; ?>">Track</a>
             </td>
           </tr>
         <?php endwhile; ?>

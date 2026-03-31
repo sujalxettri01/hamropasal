@@ -1,8 +1,16 @@
 <?php
+// Start user session (separate from admin session)
+session_name('user_session');
 session_start();
 require __DIR__ . '/../database/connection.php';
 
 if (isset($_SESSION['user'])) {
+    // Redirect admins to admin panel
+    if (!empty($_SESSION['user']['is_admin'])) {
+        header('Location: /hamropasal/admin/admin.php');
+        exit;
+    }
+    // Redirect regular users to home
     header('Location: /hamropasal/');
     exit;
 }
