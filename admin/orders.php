@@ -78,13 +78,18 @@ $pageTitle = 'Manage Orders';
           <td><?php echo htmlspecialchars(substr($order['address'], 0, 30)) . (strlen($order['address']) > 30 ? '...' : ''); ?></td>
           <td><?php echo htmlspecialchars($order['payment_method']); ?></td>
           <td>
-            <select onchange="updateStatus(<?php echo (int) $order['order_id']; ?>, this.value)">
+            <select onchange="updateStatus(<?php echo (int) $order['order_id']; ?>, this.value)" <?php echo $order['order_status'] === 'Cancelled' ? 'disabled' : ''; ?>>
               <option value="Pending" <?php echo $order['order_status'] === 'Pending' ? 'selected' : ''; ?>>Pending</option>
               <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
               <option value="Shipped" <?php echo $order['order_status'] === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
               <option value="Delivered" <?php echo $order['order_status'] === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
-              <option value="Cancelled" <?php echo $order['order_status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+              <?php if ($order['order_status'] === 'Cancelled'): ?>
+                <option value="Cancelled" selected>Cancelled</option>
+              <?php endif; ?>
             </select>
+            <?php if ($order['order_status'] !== 'Cancelled' && $order['order_status'] !== 'Delivered'): ?>
+              <a href="/hamropasal/admin/order_details.php?id=<?php echo (int) $order['order_id']; ?>#cancel-section" style="display: inline-block; margin-left: 8px; padding: 6px 12px; background: #dc3545; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Cancel</a>
+            <?php endif; ?>
           </td>
           <td>Rs. <?php echo number_format((float) $order['total_amount'], 2); ?></td>
           <td><?php echo date('M d, Y', strtotime($order['created_at'])); ?></td>

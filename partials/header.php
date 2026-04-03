@@ -13,9 +13,13 @@ if (isset($_SESSION['user']['user_id'])) {
         require __DIR__ . '/../database/connection.php';
     }
     $userId = (int) $_SESSION['user']['user_id'];
-    $msgResult = mysqli_query($conn, "SELECT COUNT(*) as count FROM messages WHERE user_id=$userId AND is_read=0");
+    $stmt = mysqli_prepare($conn, "SELECT COUNT(*) as count FROM messages WHERE user_id=? AND is_read=0");
+    mysqli_stmt_bind_param($stmt, "i", $userId);
+    mysqli_stmt_execute($stmt);
+    $msgResult = mysqli_stmt_get_result($stmt);
     $msgData = mysqli_fetch_assoc($msgResult);
     $unreadMessages = $msgData['count'];
+    mysqli_stmt_close($stmt);
 }
 ?>
 <!DOCTYPE html>
@@ -26,6 +30,7 @@ if (isset($_SESSION['user']['user_id'])) {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="/hamropasal/css/style.css">
   <title><?php echo isset($pageTitle) ? $pageTitle . ' - HamroPasal' : 'HamroPasal'; ?></title>
 </head>
@@ -33,34 +38,39 @@ if (isset($_SESSION['user']['user_id'])) {
 <header class="site-header">
   <div class="container nav-wrap">
     <a class="brand" href="/hamropasal/">
-      HamroPasal
+      <i class="fas fa-store"></i> HamroPasal
     </a>
     
     <form class="search-form" method="get" action="/hamropasal/products/">
       <input type="text" name="q" placeholder="Search products..." value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" autocomplete="off">
-      <button type="submit">Search</button>
+      <button type="submit"><i class="fas fa-search"></i></button>
       <div id="search-suggestions-container"></div>
     </form>
     
+    <button class="hamburger" aria-label="Toggle menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    
     <nav class="main-nav">
-      <a href="/hamropasal/products/" title="Browse All Products">Products</a>
+      <a href="/hamropasal/products/" title="Browse All Products"><i class="fas fa-boxes"></i> Products</a>
       <a href="/hamropasal/cart/" title="View Shopping Cart">
-        Cart <span style="font-weight: bold; color: #2563eb;">(<?php echo $cartCount; ?>)</span>
+        <i class="fas fa-shopping-cart"></i> Cart <span class="cart-count">(<?php echo $cartCount; ?>)</span>
       </a>
       <?php if (isset($_SESSION['user'])): ?>
-        <a href="/hamropasal/orders/" title="Track Your Orders">Orders</a>
-        <a href="/hamropasal/messages/" style="position: relative;" title="View Messages">
-          Messages
+        <a href="/hamropasal/orders/" title="Track Your Orders"><i class="fas fa-list"></i> Orders</a>
+        <a href="/hamropasal/messages/" class="messages-link" title="View Messages">
+          <i class="fas fa-envelope"></i> Messages
           <?php if ($unreadMessages > 0): ?>
-            <span style="position: absolute; top: -8px; right: -8px; background: #dc2626; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;"><?php echo $unreadMessages; ?></span>
+            <span class="badge"><?php echo $unreadMessages; ?></span>
           <?php endif; ?>
         </a>
         <span class="welcome">Hi, <?php echo htmlspecialchars($_SESSION['user']['name']); ?></span>
-        <a href="/hamropasal/logout/" title="Logout">Logout</a>
+        <a href="/hamropasal/logout/" title="Logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
       <?php else: ?>
-        <a href="/hamropasal/login/" title="Sign In">Login</a>
-        <a href="/hamropasal/register/" title="Create Account">Register</a>
+        <a href="/hamropasal/login/" title="Sign In"><i class="fas fa-sign-in-alt"></i> Login</a>
+        <a href="/hamropasal/register/" title="Create Account"><i class="fas fa-user-plus"></i> Register</a>
       <?php endif; ?>
     </nav>
   </div>
 </header>
+<script src="/hamropasal/js/script.js"></script>

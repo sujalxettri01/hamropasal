@@ -3,6 +3,7 @@
 session_name('user_session');
 session_start();
 require __DIR__ . '/database/connection.php';
+require __DIR__ . '/config/image_helper.php';
 
 // Redirect admins to admin panel
 if (isset($_SESSION['user']) && !empty($_SESSION['user']['is_admin'])) {
@@ -55,7 +56,7 @@ $pageTitle = 'Home';
         <article class="card">
           <div class="card-image-wrapper">
             <a href="/hamropasal/product/?id=<?php echo (int) $p['product_id']; ?>" class="card-image-link">
-              <img src="<?php echo htmlspecialchars($p['image']); ?>" alt="<?php echo htmlspecialchars($p['name']); ?>" loading="lazy">
+              <img src="<?php echo getProductImageUrl($p['name'], $p['category'], $p['image']); ?>" alt="<?php echo htmlspecialchars($p['name']); ?>" loading="lazy">
             </a>
             <?php if ($p['stock'] > 0): ?>
               <span class="stock-badge in-stock">In Stock</span>

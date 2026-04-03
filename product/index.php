@@ -3,6 +3,7 @@
 session_name('user_session');
 session_start();
 require __DIR__ . '/../database/connection.php';
+require __DIR__ . '/../config/image_helper.php';
 
 // Redirect admins to admin panel
 if (isset($_SESSION['user']) && !empty($_SESSION['user']['is_admin'])) {
@@ -37,7 +38,7 @@ if (!$product) {
 <div class="container">
   <div class="form-card" style="max-width: 920px;">
     <div style="display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 18px; align-items: start;">
-      <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" style="width:100%; border-radius: 10px; max-height: 320px; object-fit: cover;">
+      <img src="<?php echo getProductDetailImageUrl($product['name'], $product['category'], $product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" style="width:100%; border-radius: 10px; max-height: 320px; object-fit: cover;">
       <div>
         <h1><?php echo htmlspecialchars($product['name']); ?></h1>
         <p><strong>Category:</strong> <?php echo htmlspecialchars($product['category']); ?></p>

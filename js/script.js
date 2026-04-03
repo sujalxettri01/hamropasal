@@ -156,4 +156,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // Hamburger menu toggle
+  const hamburger = document.querySelector('.hamburger');
+  const mainNav = document.querySelector('.main-nav');
+  if (hamburger && mainNav) {
+    hamburger.addEventListener('click', () => {
+      mainNav.classList.toggle('open');
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!hamburger.contains(e.target) && !mainNav.contains(e.target)) {
+        mainNav.classList.remove('open');
+      }
+    });
+  }
+
 });

@@ -32,6 +32,12 @@ $pageTitle = 'Order Details';
     <?php if (isset($_GET['success']) && $_GET['success'] === '1'): ?>
       <p style="color: #28a745; font-weight: bold; margin-bottom: 20px;">Order has been placed successfully!</p>
     <?php endif; ?>
+    <?php if (isset($_GET['cancelled']) && $_GET['cancelled'] === '1'): ?>
+      <p style="color: #28a745; font-weight: bold; margin-bottom: 20px;">✓ Order cancelled successfully! Customer has been notified.</p>
+    <?php endif; ?>
+    <?php if (isset($_GET['error'])): ?>
+      <p style="color: #dc3545; font-weight: bold; margin-bottom: 20px;">⚠ Error: <?php echo htmlspecialchars($_GET['error']); ?></p>
+    <?php endif; ?>
   </section>
 
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px;">
@@ -74,6 +80,21 @@ $pageTitle = 'Order Details';
       <?php endwhile; ?>
     </tbody>
   </table>
+
+  <?php if ($order['order_status'] !== 'Cancelled' && $order['order_status'] !== 'Delivered'): ?>
+    <section id="cancel-section" style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc3545;">
+      <h3 style="margin-top: 0; color: #dc3545;">Cancel Order</h3>
+      <p style="color: #666; margin-bottom: 20px;">If you need to cancel this order, provide a reason that will be sent to the customer:</p>
+      <form method="POST" action="/hamropasal/admin/cancel_order.php" onsubmit="return confirm('Are you sure you want to cancel this order and notify the customer?');">
+        <input type="hidden" name="order_id" value="<?php echo (int) $order['order_id']; ?>">
+        <div style="margin-bottom: 15px;">
+          <label for="cancel_reason" style="display: block; margin-bottom: 8px; font-weight: bold;">Cancellation Reason:</label>
+          <textarea id="cancel_reason" name="cancel_reason" required style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: Arial, sans-serif; resize: vertical;" placeholder="e.g., Out of stock, Customer request, Payment issue, etc."></textarea>
+        </div>
+        <button type="submit" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Cancel Order & Notify Customer</button>
+      </form>
+    </section>
+  <?php endif; ?>
 
   <p style="margin-top: 20px;">
     <a class="admin-btn secondary" href="/hamropasal/admin/orders.php">Back to Orders</a>

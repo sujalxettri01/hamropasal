@@ -30,15 +30,7 @@
         </ul>
       </div>
       
-      <div class="footer-section">
-        <h3>Subscribe</h3>
-        <p>Get updates and exclusive offers directly to your email.</p>
-        <form id="newsletter-form" class="footer-newsletter" method="post" action="/hamropasal/newsletter_subscribe.php">
-          <input type="email" name="email" placeholder="Enter your email" required>
-          <button type="submit" class="btn">Subscribe</button>
-          <div id="newsletter-message" class="newsletter-message"></div>
-        </form>
-      </div>
+
     </div>
     
     <div class="footer-bottom">
@@ -47,21 +39,6 @@
     </div>
   </div>
 </footer>
-<script>
-  document.getElementById('newsletter-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var emailInput = this.querySelector('input[name="email"]');
-    var message = document.getElementById('newsletter-message');
-    if (!emailInput.value.trim()) {
-      message.textContent = 'Please enter a valid email address.';
-      message.style.color = '#ad1f1f';
-      return;
-    }
-    message.textContent = 'Thank you for subscribing! Check your inbox soon.';
-    message.style.color = '#0f766e';
-    this.reset();
-  });
-</script>
 <script src="/hamropasal/js/script.js"></script>
 </body>
 </html>
